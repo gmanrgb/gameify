@@ -1,7 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
   "framework": "vite",
   "installCommand": "npm i -g pnpm && pnpm install",
   "buildCommand": "pnpm --filter @questlog/shared build && pnpm --filter @questlog/web build",
-  "outputDirectory": "apps/web/dist"
+  "outputDirectory": "apps/web/dist",
+  "rootDirectory": "."
 }
