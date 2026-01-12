@@ -1,0 +1,25 @@
+{
+  "name": "questlog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first goal gamification app",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @questlog/server dev\" \"pnpm --filter @questlog/web dev\"",
+    "build": "pnpm --filter @questlog/shared build && pnpm --filter @questlog/web build && pnpm --filter @questlog/server build",
+    "start": "pnpm --filter @questlog/server start",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "prettier": "^3.2.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@8.14.0"
+}
