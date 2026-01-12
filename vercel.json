@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
+  "framework": null,
   "installCommand": "npm i -g pnpm && pnpm install --no-frozen-lockfile",
-  "buildCommand": "pnpm --filter @questlog/shared build && pnpm --filter @questlog/web build",
+  "buildCommand": "pnpm --filter @questlog/shared build && pnpm --filter @questlog/web build && ls -la dist",
   "outputDirectory": "dist"
 }
