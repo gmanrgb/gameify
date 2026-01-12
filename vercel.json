@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm i -g pnpm && pnpm install --no-frozen-lockfile",
-  "buildCommand": "pnpm --filter @questlog/shared build && pnpm --filter @questlog/web build && cp -r apps/web/dist .",
+  "buildCommand": "pnpm --filter @questlog/shared build && pnpm --filter @questlog/web build && mkdir -p dist && cp -r apps/web/dist/* dist/",
   "outputDirectory": "dist"
 }
