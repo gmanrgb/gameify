@@ -36,3 +36,6 @@ coverage/
 # Playwright
 test-results/
 playwright-report/
+
+# Old nested project folder (to be deleted)
+questlog/
