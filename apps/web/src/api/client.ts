@@ -1,13 +1,13 @@
+// Client-side API using localStorage - No backend needed!
+import * as storage from '../lib/storage';
 import type {
   Profile,
   GoalWithRecurrence,
   Task,
-  Checkin,
   Badge,
   TodayResponse,
   CheckinResponse,
   WeeklyReviewResponse,
-  MonthlyReviewResponse,
   CreateGoalInput,
   UpdateGoalInput,
   CreateTaskInput,
@@ -15,154 +15,125 @@ import type {
   UseFreezeResponse,
 } from '@questlog/shared';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, string>;
-  };
-}
-
-async function request<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE}${path}`;
-  const headers: HeadersInit = {
-    ...options.headers,
-  };
-
-  if (options.body && !(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  const json = await response.json() as ApiResponse<T>;
-
-  if (!response.ok || !json.success) {
-    throw new Error(json.error?.message || 'Request failed');
-  }
-
-  return json.data as T;
-}
-
 export const api = {
-  // Health
-  health: () => request<{ status: string; database: string; timestamp: string }>('/health'),
+  // Health - always returns ok for client-side
+  health: async () => ({ status: 'ok', database: 'localStorage', timestamp: new Date().toISOString() }),
 
   // Profile
-  getProfile: () => request<Profile>('/profile'),
-  updateProfile: (data: { theme?: string; accent?: string }) =>
-    request<Profile>('/profile', {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+  getProfile: async (): Promise<Profile> => storage.getProfile(),
+  
+  updateProfile: async (data: { theme?: string; accent?: string }): Promise<Profile> => 
+    storage.updateProfile(data),
 
   // Goals
-  getGoals: (archived = false) =>
-    request<{ goals: GoalWithRecurrence[] }>(`/goals?archived=${archived}`),
+  getGoals: async (archived = false): Promise<{ goals: GoalWithRecurrence[] }> => ({
+    goals: storage.getGoals(archived),
+  }),
   
-  createGoal: (data: CreateGoalInput) =>
-    request<{ goal: GoalWithRecurrence; badgesUnlocked: Badge[] }>('/goals', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  createGoal: async (data: CreateGoalInput): Promise<{ goal: GoalWithRecurrence; badgesUnlocked: Badge[] }> =>
+    storage.createGoal(data),
   
-  updateGoal: (id: string, data: UpdateGoalInput) =>
-    request<{ goal: GoalWithRecurrence }>(`/goals/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+  updateGoal: async (id: string, data: UpdateGoalInput): Promise<{ goal: GoalWithRecurrence }> => {
+    const goal = storage.updateGoal(id, data);
+    if (!goal) throw new Error('Goal not found');
+    return { goal };
+  },
   
-  archiveGoal: (id: string) =>
-    request<{ archived: boolean }>(`/goals/${id}/archive`, { method: 'POST' }),
+  archiveGoal: async (id: string): Promise<{ archived: boolean }> => ({
+    archived: storage.archiveGoal(id),
+  }),
   
-  unarchiveGoal: (id: string) =>
-    request<{ archived: boolean }>(`/goals/${id}/unarchive`, { method: 'POST' }),
+  unarchiveGoal: async (id: string): Promise<{ archived: boolean }> => ({
+    archived: !storage.unarchiveGoal(id),
+  }),
   
-  useFreeze: (goalId: string, date: string) =>
-    request<UseFreezeResponse>(`/goals/${goalId}/use-freeze`, {
-      method: 'POST',
-      body: JSON.stringify({ date }),
-    }),
+  useFreeze: async (goalId: string, date: string): Promise<UseFreezeResponse> => {
+    // Simplified freeze logic for client-side
+    const goals = storage.getGoals(false);
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal || goal.freezeTokens <= 0) {
+      throw new Error('No freeze tokens available');
+    }
+    storage.updateGoal(goalId, { freezeTokens: goal.freezeTokens - 1 });
+    return {
+      success: true,
+      newFreezeTokens: goal.freezeTokens - 1,
+      streakPreserved: goal.currentStreak,
+    };
+  },
 
   // Tasks
-  getTasks: (goalId: string) =>
-    request<{ tasks: Task[] }>(`/goals/${goalId}/tasks`),
+  getTasks: async (goalId: string): Promise<{ tasks: Task[] }> => ({
+    tasks: storage.getTasks(goalId),
+  }),
   
-  createTask: (goalId: string, data: CreateTaskInput) =>
-    request<{ task: Task }>(`/goals/${goalId}/tasks`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  createTask: async (goalId: string, data: CreateTaskInput): Promise<{ task: Task }> => ({
+    task: storage.createTask(goalId, data),
+  }),
   
-  updateTask: (taskId: string, data: UpdateTaskInput) =>
-    request<{ task: Task }>(`/tasks/${taskId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+  updateTask: async (taskId: string, data: UpdateTaskInput): Promise<{ task: Task }> => {
+    const task = storage.updateTask(taskId, data);
+    if (!task) throw new Error('Task not found');
+    return { task };
+  },
   
-  deleteTask: (taskId: string) =>
-    request<{ deleted: boolean }>(`/tasks/${taskId}`, { method: 'DELETE' }),
+  deleteTask: async (taskId: string): Promise<{ deleted: boolean }> => ({
+    deleted: storage.deleteTask(taskId),
+  }),
   
-  reorderTasks: (goalId: string, taskIds: string[]) =>
-    request<{ tasks: Task[] }>(`/goals/${goalId}/tasks/reorder`, {
-      method: 'POST',
-      body: JSON.stringify({ taskIds }),
-    }),
+  reorderTasks: async (goalId: string, taskIds: string[]): Promise<{ tasks: Task[] }> => {
+    taskIds.forEach((id, index) => {
+      storage.updateTask(id, { orderIndex: index });
+    });
+    return { tasks: storage.getTasks(goalId) };
+  },
 
   // Today & Checkins
-  getToday: (date: string) =>
-    request<TodayResponse>(`/today?date=${date}`),
+  getToday: async (date: string): Promise<TodayResponse> => storage.getTodayData(date) as TodayResponse,
   
-  createCheckin: (data: { date: string; goalId: string; taskId?: string }) =>
-    request<CheckinResponse>('/checkins', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  createCheckin: async (data: { date: string; goalId: string; taskId?: string }): Promise<CheckinResponse> =>
+    storage.createCheckin(data) as CheckinResponse,
   
-  undoCheckin: (data: { date: string; goalId: string; taskId?: string }) =>
-    request<{ undone: boolean; profile: Profile; isPerfectDay: boolean }>('/checkins/undo', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  undoCheckin: async (data: { date: string; goalId: string; taskId?: string }): Promise<{ undone: boolean; profile: Profile; isPerfectDay: boolean }> => {
+    const undone = storage.undoCheckin(data);
+    return {
+      undone,
+      profile: storage.getProfile(),
+      isPerfectDay: false,
+    };
+  },
 
   // Review
-  getWeeklyReview: (startDate: string) =>
-    request<WeeklyReviewResponse>(`/review/weekly?start=${startDate}`),
+  getWeeklyReview: async (startDate: string): Promise<WeeklyReviewResponse> =>
+    storage.getWeeklyReview(startDate) as WeeklyReviewResponse,
   
-  getMonthlyReview: (month: string) =>
-    request<MonthlyReviewResponse>(`/review/monthly?month=${month}`),
+  getMonthlyReview: async (month: string): Promise<WeeklyReviewResponse> => {
+    // Convert month (YYYY-MM) to start date
+    const startDate = `${month}-01`;
+    return storage.getWeeklyReview(startDate) as WeeklyReviewResponse;
+  },
 
   // Backup
   exportBackup: () => {
-    window.open(`${API_BASE}/backup/export`, '_blank');
+    const data = storage.exportBackup();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `questlog-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   },
   
-  importBackup: async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch(`${API_BASE}/backup/import`, {
-      method: 'POST',
-      body: formData,
-    });
-    
-    const json = await response.json();
-    if (!json.success) {
-      throw new Error(json.error?.message || 'Import failed');
-    }
-    return json.data;
+  importBackup: async (file: File): Promise<{ imported: boolean }> => {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    storage.importBackup(data.data);
+    return { imported: true };
   },
   
-  resetData: () =>
-    request<{ reset: boolean }>('/backup/reset', { method: 'POST' }),
+  resetData: async (): Promise<{ reset: boolean }> => {
+    storage.resetAllData();
+    return { reset: true };
+  },
 };
