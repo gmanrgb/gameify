@@ -9,10 +9,10 @@ import type {
   CheckinResponse,
   WeeklyReviewResponse,
   CreateGoalInput,
-  UpdateGoalInput,
   CreateTaskInput,
   UpdateTaskInput,
   UseFreezeResponse,
+  Theme,
 } from '@questlog/shared';
 
 export const api = {
@@ -22,7 +22,7 @@ export const api = {
   // Profile
   getProfile: async (): Promise<Profile> => storage.getProfile(),
   
-  updateProfile: async (data: { theme?: string; accent?: string }): Promise<Profile> => 
+  updateProfile: async (data: { theme?: Theme; accent?: string }): Promise<Profile> => 
     storage.updateProfile(data),
 
   // Goals
@@ -33,8 +33,21 @@ export const api = {
   createGoal: async (data: CreateGoalInput): Promise<{ goal: GoalWithRecurrence; badgesUnlocked: Badge[] }> =>
     storage.createGoal(data),
   
-  updateGoal: async (id: string, data: UpdateGoalInput): Promise<{ goal: GoalWithRecurrence }> => {
-    const goal = storage.updateGoal(id, data);
+  updateGoal: async (id: string, data: CreateGoalInput): Promise<{ goal: GoalWithRecurrence }> => {
+    // Transform CreateGoalInput to Partial<GoalWithRecurrence>
+    const updates: Partial<GoalWithRecurrence> = {
+      title: data.title,
+      cadence: data.cadence,
+      color: data.color,
+      xpPerCheck: data.xpPerCheck,
+      recurrence: data.recurrence ? {
+        weeklyTarget: data.recurrence.weeklyTarget ?? null,
+        monthlyTarget: data.recurrence.monthlyTarget ?? null,
+        weekdaysMask: data.recurrence.weekdaysMask ?? null,
+        dueTimeMinutes: data.recurrence.dueTimeMinutes ?? null,
+      } : null,
+    };
+    const goal = storage.updateGoal(id, updates);
     if (!goal) throw new Error('Goal not found');
     return { goal };
   },
@@ -47,7 +60,7 @@ export const api = {
     archived: !storage.unarchiveGoal(id),
   }),
   
-  useFreeze: async (goalId: string, date: string): Promise<UseFreezeResponse> => {
+  useFreeze: async (goalId: string, _date: string): Promise<UseFreezeResponse> => {
     // Simplified freeze logic for client-side
     const goals = storage.getGoals(false);
     const goal = goals.find(g => g.id === goalId);

@@ -29,7 +29,6 @@ const STORAGE_KEYS = {
 // Initialize default data
 function getDefaultProfile(): Profile {
   return {
-    id: 1,
     xpTotal: 0,
     level: 1,
     perfectDays: 0,
@@ -128,7 +127,12 @@ export function createGoal(input: CreateGoalInput): { goal: GoalWithRecurrence; 
     lastPeriodKey: null,
     freezeTokens: 0,
     createdAt: getCurrentTimestamp(),
-    recurrence: input.recurrence || null,
+    recurrence: input.recurrence ? {
+      weeklyTarget: input.recurrence.weeklyTarget ?? null,
+      monthlyTarget: input.recurrence.monthlyTarget ?? null,
+      weekdaysMask: input.recurrence.weekdaysMask ?? null,
+      dueTimeMinutes: input.recurrence.dueTimeMinutes ?? null,
+    } : null,
     taskCount: 0,
   };
 
@@ -253,7 +257,7 @@ export function createCheckin(data: { date: string; goalId: string; taskId?: str
   save(STORAGE_KEYS.CHECKINS, checkins);
 
   // Add XP
-  const { profile, badgesUnlocked } = addXp(xpEarned);
+  const { badgesUnlocked } = addXp(xpEarned);
 
   // Check first checkin badge
   if (checkins.length === 1) {

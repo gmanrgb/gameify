@@ -3,7 +3,7 @@ import { api } from '../api/client';
 import { Card, CardBody, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
-import type { WeeklyReviewResponse, MonthlyReviewResponse } from '@questlog/shared';
+import type { WeeklyReviewResponse } from '@questlog/shared';
 import { formatDateString } from '@questlog/shared';
 
 type Tab = 'weekly' | 'monthly';
@@ -11,7 +11,7 @@ type Tab = 'weekly' | 'monthly';
 export function Review() {
   const [activeTab, setActiveTab] = useState<Tab>('weekly');
   const [weeklyData, setWeeklyData] = useState<WeeklyReviewResponse | null>(null);
-  const [monthlyData, setMonthlyData] = useState<MonthlyReviewResponse | null>(null);
+  const [monthlyData, setMonthlyData] = useState<WeeklyReviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [weekStart, setWeekStart] = useState(() => {
     const today = new Date();
