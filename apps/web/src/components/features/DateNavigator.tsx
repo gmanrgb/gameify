@@ -1,5 +1,5 @@
 import { useStore } from '../../store';
-import { formatDateString } from '@questlog/shared';
+import { formatDateString, parseLocalDateString } from '@questlog/shared';
 import { Button } from '../ui/Button';
 
 export function DateNavigator() {
@@ -9,13 +9,13 @@ export function DateNavigator() {
   const isToday = selectedDate === today;
 
   const goToPrevious = () => {
-    const date = new Date(selectedDate);
+    const date = parseLocalDateString(selectedDate);
     date.setDate(date.getDate() - 1);
     setSelectedDate(formatDateString(date));
   };
 
   const goToNext = () => {
-    const date = new Date(selectedDate);
+    const date = parseLocalDateString(selectedDate);
     date.setDate(date.getDate() + 1);
     setSelectedDate(formatDateString(date));
   };
@@ -25,7 +25,7 @@ export function DateNavigator() {
   };
 
   const formatDisplayDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = parseLocalDateString(dateStr);
     const options: Intl.DateTimeFormatOptions = {
       weekday: 'long',
       month: 'long',
@@ -41,7 +41,7 @@ export function DateNavigator() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </Button>
-      
+
       <div className="flex items-center gap-3">
         <span className="text-xl">📅</span>
         <div className="text-center">

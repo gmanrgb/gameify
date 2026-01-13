@@ -4,7 +4,7 @@ import { Card, CardBody, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Skeleton } from '../components/ui/Skeleton';
 import type { WeeklyReviewResponse } from '@questlog/shared';
-import { formatDateString } from '@questlog/shared';
+import { formatDateString, parseLocalDateString } from '@questlog/shared';
 
 type Tab = 'weekly' | 'monthly';
 
@@ -58,13 +58,13 @@ export function Review() {
   };
 
   const goToPreviousWeek = () => {
-    const date = new Date(weekStart);
+    const date = parseLocalDateString(weekStart);
     date.setDate(date.getDate() - 7);
     setWeekStart(formatDateString(date));
   };
 
   const goToNextWeek = () => {
-    const date = new Date(weekStart);
+    const date = parseLocalDateString(weekStart);
     date.setDate(date.getDate() + 7);
     setWeekStart(formatDateString(date));
   };
@@ -89,8 +89,8 @@ export function Review() {
 
   const formatWeekDisplay = () => {
     if (!weeklyData) return '';
-    const start = new Date(weeklyData.startDate);
-    const end = new Date(weeklyData.endDate);
+    const start = parseLocalDateString(weeklyData.startDate);
+    const end = parseLocalDateString(weeklyData.endDate);
     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
 
@@ -112,21 +112,19 @@ export function Review() {
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveTab('weekly')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'weekly'
-              ? 'bg-white/10 text-text-primary'
-              : 'text-text-secondary hover:text-text-primary'
-          }`}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'weekly'
+            ? 'bg-white/10 text-text-primary'
+            : 'text-text-secondary hover:text-text-primary'
+            }`}
         >
           Weekly
         </button>
         <button
           onClick={() => setActiveTab('monthly')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'monthly'
-              ? 'bg-white/10 text-text-primary'
-              : 'text-text-secondary hover:text-text-primary'
-          }`}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'monthly'
+            ? 'bg-white/10 text-text-primary'
+            : 'text-text-secondary hover:text-text-primary'
+            }`}
         >
           Monthly
         </button>
@@ -194,16 +192,15 @@ export function Review() {
                   return (
                     <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                       <div
-                        className={`w-full rounded-t transition-all ${
-                          day.isPerfectDay 
-                            ? 'bg-gradient-to-t from-yellow-500 to-orange-500' 
-                            : 'bg-gradient-to-t from-primary to-secondary'
-                        }`}
+                        className={`w-full rounded-t transition-all ${day.isPerfectDay
+                          ? 'bg-gradient-to-t from-yellow-500 to-orange-500'
+                          : 'bg-gradient-to-t from-primary to-secondary'
+                          }`}
                         style={{ height: `${Math.max(height, 4)}%` }}
                         title={`${day.xpEarned} XP`}
                       />
                       <span className="text-xs text-text-secondary">
-                        {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })[0]}
+                        {parseLocalDateString(day.date).toLocaleDateString('en-US', { weekday: 'short' })[0]}
                       </span>
                     </div>
                   );
@@ -273,12 +270,12 @@ export function Review() {
                   </div>
                 ))}
                 {monthlyData.days.map((day) => {
-                  const date = new Date(day.date);
+                  const date = parseLocalDateString(day.date);
                   const dayOfWeek = date.getDay();
                   const dayNum = date.getDate();
                   // Add empty cells for first week offset
                   const offset = dayNum === 1 ? (dayOfWeek === 0 ? 6 : dayOfWeek - 1) : 0;
-                  
+
                   return (
                     <>
                       {dayNum === 1 && Array.from({ length: offset }).map((_, i) => (
@@ -288,8 +285,8 @@ export function Review() {
                         key={day.date}
                         className={`
                           aspect-square rounded flex items-center justify-center text-xs
-                          ${day.isPerfectDay 
-                            ? 'bg-yellow-500/30 text-yellow-300' 
+                          ${day.isPerfectDay
+                            ? 'bg-yellow-500/30 text-yellow-300'
                             : day.checkinsCount > 0
                               ? 'bg-primary/30 text-primary'
                               : 'bg-white/5 text-text-secondary'

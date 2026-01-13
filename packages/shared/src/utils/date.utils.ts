@@ -1,6 +1,16 @@
 import type { Cadence } from '../schemas/goal.schema.js';
 
 /**
+ * Parse a YYYY-MM-DD date string as local time (not UTC).
+ * This is critical because Date.parse("2026-01-12") creates UTC midnight,
+ * which in negative UTC offset timezones shows as the previous day.
+ */
+export function parseLocalDateString(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Get ISO week number (1-52/53) for a given date
  * Week 1 contains the first Thursday of the year
  */
@@ -30,8 +40,8 @@ export function getISOWeekYear(date: Date): number {
  * - Monthly: YYYY-MM
  */
 export function getPeriodKey(cadence: Cadence, dateStr: string): string {
-  const date = new Date(dateStr);
-  
+  const date = parseLocalDateString(dateStr);
+
   switch (cadence) {
     case 'daily':
       return dateStr;
@@ -53,7 +63,7 @@ export function getPeriodKey(cadence: Cadence, dateStr: string): string {
 export function getPreviousPeriodKey(cadence: Cadence, currentPeriodKey: string): string {
   switch (cadence) {
     case 'daily': {
-      const date = new Date(currentPeriodKey);
+      const date = parseLocalDateString(currentPeriodKey);
       date.setDate(date.getDate() - 1);
       return formatDateString(date);
     }
@@ -101,7 +111,7 @@ export function getTodayString(): string {
  * Get day of week bit for weekdays mask (ISO 8601: 0=Monday, 6=Sunday)
  */
 export function getDayOfWeekBit(dateStr: string): number {
-  const date = new Date(dateStr);
+  const date = parseLocalDateString(dateStr);
   const jsDay = date.getDay(); // 0=Sunday, 6=Saturday
   // Convert to ISO: Monday=0, Sunday=6
   return jsDay === 0 ? 6 : jsDay - 1;
@@ -119,14 +129,14 @@ export function isDateInPeriod(dateStr: string, periodKey: string, cadence: Cade
  */
 export function getWeekDates(startDateStr: string): string[] {
   const dates: string[] = [];
-  const start = new Date(startDateStr);
-  
+  const start = parseLocalDateString(startDateStr);
+
   for (let i = 0; i < 7; i++) {
     const date = new Date(start);
     date.setDate(start.getDate() + i);
     dates.push(formatDateString(date));
   }
-  
+
   return dates;
 }
 
@@ -137,11 +147,11 @@ export function getMonthDates(monthKey: string): string[] {
   const [year, month] = monthKey.split('-').map(Number);
   const dates: string[] = [];
   const daysInMonth = new Date(year, month, 0).getDate();
-  
+
   for (let day = 1; day <= daysInMonth; day++) {
     dates.push(`${monthKey}-${day.toString().padStart(2, '0')}`);
   }
-  
+
   return dates;
 }
 
@@ -168,17 +178,17 @@ export function getPeriodDistance(
   toKey: string
 ): number | null {
   if (!fromKey) return null;
-  
+
   let distance = 0;
   let current = toKey;
-  
+
   // Safety limit to prevent infinite loops
   const maxIterations = 1000;
-  
+
   while (current !== fromKey && distance < maxIterations) {
     current = getPreviousPeriodKey(cadence, current);
     distance++;
   }
-  
+
   return distance < maxIterations ? distance : null;
 }

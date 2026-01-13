@@ -15,6 +15,7 @@ import {
   getPreviousPeriodKey,
   getCurrentTimestamp,
   formatDateString,
+  parseLocalDateString,
 } from '@questlog/shared';
 
 const STORAGE_KEYS = {
@@ -29,11 +30,14 @@ const STORAGE_KEYS = {
 // Initialize default data
 function getDefaultProfile(): Profile {
   return {
+    userId: uuidv4(),
+    displayName: undefined,
     xpTotal: 0,
     level: 1,
     perfectDays: 0,
     theme: 'aurora',
     accent: '#7C3AED',
+    createdAt: getCurrentTimestamp(),
   };
 }
 
@@ -114,7 +118,7 @@ export function getGoals(archived = false): GoalWithRecurrence[] {
 
 export function createGoal(input: CreateGoalInput): { goal: GoalWithRecurrence; badgesUnlocked: Badge[] } {
   const goals = load<GoalWithRecurrence[]>(STORAGE_KEYS.GOALS, []);
-  
+
   const newGoal: GoalWithRecurrence = {
     id: uuidv4(),
     title: input.title,
@@ -430,7 +434,7 @@ export function getWeeklyReview(startDate: string) {
   let totalPerfectDays = 0;
 
   for (let i = 0; i < 7; i++) {
-    const date = new Date(startDate);
+    const date = parseLocalDateString(startDate);
     date.setDate(date.getDate() + i);
     const dateStr = formatDateString(date);
 
@@ -461,7 +465,7 @@ export function getWeeklyReview(startDate: string) {
       currentStreak: g.currentStreak,
     }));
 
-  const endDate = new Date(startDate);
+  const endDate = parseLocalDateString(startDate);
   endDate.setDate(endDate.getDate() + 6);
 
   return {
