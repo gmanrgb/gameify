@@ -1,4 +1,4 @@
-# 🎮 QuestLog
+# 🎮 QuestLog - VibeCoded
 
 **Local-first goal gamification app** — Track your goals, earn XP, build streaks, and level up your life!
 
@@ -153,3 +153,4 @@ MIT License — feel free to use, modify, and distribute.
 ---
 
 Built with ❤️ for goal achievers everywhere. Level up your life, one check-in at a time! 🚀
+
